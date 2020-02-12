@@ -185,6 +185,8 @@ module Numeric.LinearAlgebra.Static.Backprop (
   -- ** Misc Operations
   , konst
   , sumElements
+  , toListV
+  , fromListV
   , extractV
   , extractM
   , create
@@ -1176,6 +1178,19 @@ sumElements = liftOp1 . op1 $ \x ->
     , H.konst
     )
 {-# INLINE sumElements #-}
+
+-- | Gives the same guarantees as the original fromList (ie throws an error if
+-- the input list does not match the output size)
+fromListV :: (H.Sized t b HU.Vector, Storable t, Reifies s W, Backprop t)
+         => [BVar s t] -> BVar s b
+fromListV = liftOp1 (op1 (\v -> (H.fromList v, HU.toList . H.extract))) . collectVar
+{-# INLINE fromListV #-}
+
+toListV :: (H.Sized t a HU.Vector, Backprop t, Backprop a, Storable t, Reifies s W)
+        => BVar s a -> [BVar s t]
+toListV = sequenceVar . liftOp1 (op1 (\v -> (HU.toList . H.extract $ v, H.fromList)))
+{-# INLINE toListV #-}
+
 
 -- | If there are extra items in the total derivative, they are dropped.
 -- If there are missing items, they are treated as zero.
